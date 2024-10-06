@@ -5,6 +5,7 @@ pub enum FileType {
     DIRECTORY,
     SYMLINK,
 }
+
 pub struct FileInfo {
     // filesystem path
     pub path: String,
@@ -38,6 +39,16 @@ pub trait Filter: IntoIterator {
     fn files(&self) -> &Option<Vec<FileInfo>>;
 }
 
+/// The filter consider all of the files into regular files ignoring symlinks, and
+/// only check exisitence of thr root path.
+/// ```
+/// use clannad::filter::{Filter, BasicFilter};
+/// use std::path::Path;
+///
+/// let mut filter = BasicFilter::new(Path::new("resources/normalfolder"));
+/// filter.scan();
+/// assert_eq!(filter.into_iter().len(), 10);
+/// ```
 pub struct BasicFilter {
     root: String,
     files: Option<Vec<FileInfo>>,
