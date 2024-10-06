@@ -40,7 +40,7 @@ pub trait Filter: IntoIterator {
 }
 
 /// The filter consider all of the files into regular files ignoring symlinks, and
-/// only check exisitence of thr root path.
+/// only check exisitence of the root path.
 /// ```
 /// use clannad::filter::{Filter, BasicFilter};
 /// use std::path::Path;
