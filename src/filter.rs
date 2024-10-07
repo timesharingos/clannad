@@ -3,7 +3,6 @@ use std::{path::Path, vec::IntoIter};
 pub enum FileType {
     REGULAR,
     DIRECTORY,
-    SYMLINK,
 }
 
 pub struct FileInfo {
@@ -37,6 +36,7 @@ pub trait Filter: IntoIterator {
     fn new(root: &Path) -> Self;
     fn scan(&mut self);
     fn files(&self) -> &Option<Vec<FileInfo>>;
+    fn update(self, root: &Path) -> Self;
 }
 
 /// The filter consider all of the files into regular files ignoring symlinks, and
@@ -96,6 +96,13 @@ impl Filter for BasicFilter {
     fn files(&self) -> &Option<Vec<FileInfo>> {
         &self.files
     }
+
+    fn update(self, root: &Path) -> Self {
+        let mut instance = self;
+        instance.root = root.to_str().expect("invalid path").to_owned();
+        instance.files = None;
+        instance
+    }
 }
 
 impl IntoIterator for BasicFilter {
@@ -116,7 +123,7 @@ mod tests {
         let mut filter = BasicFilter::new(Path::new("dst"));
         filter.scan();
         assert_eq!(filter.files().is_none(), true);
-        let mut filter = BasicFilter::new(Path::new("resources/normalfolder"));
+        filter = filter.update(Path::new("resources/normalfolder"));
         filter.scan();
         assert_eq!(filter.into_iter().len(), 10 as usize);
     }
