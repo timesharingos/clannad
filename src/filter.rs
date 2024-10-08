@@ -52,7 +52,7 @@ pub trait Filter: IntoIterator<Item = FileInfo> {
 ///
 /// let mut filter = BasicFilter::new(Path::new("resources/normalfolder"));
 /// filter.scan();
-/// assert_eq!(filter.into_iter().len(), 10);
+/// assert_eq!(filter.into_iter().len(), 8 as usize);
 /// ```
 pub struct BasicFilter {
     root: String,
@@ -126,14 +126,16 @@ impl BasicFilter {
             results.push(FileInfo::new(
                 root_path,
                 root_path,
-                if root_path.is_dir() {
+                if root_path.is_symlink() {
+                    FileType::REGULAR
+                } else if root_path.is_dir() {
                     FileType::DIRECTORY
                 } else {
                     FileType::REGULAR
                 },
                 None,
             ));
-            if root_path.is_file() {
+            if root_path.is_file() || root_path.is_symlink() {
                 continue;
             }
             for subfile in root_path.read_dir().unwrap() {
@@ -411,7 +413,7 @@ mod tests {
         assert_eq!(filter.files().is_none(), true);
         filter = filter.update(Path::new("resources/normalfolder"));
         filter.scan();
-        assert_eq!(filter.into_iter().len(), 10 as usize);
+        assert_eq!(filter.into_iter().len(), 8 as usize);
     }
 
     #[test]
