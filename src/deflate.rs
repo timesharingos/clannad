@@ -14,14 +14,23 @@ pub trait Deflate {
     fn write_dir(&mut self, dir: &Path);
     fn write_file(&mut self, file: &Path, content: &[u8]);
     fn write_symlink(&mut self, link: &Path, target: &Path);
+    fn copy_dir(&mut self, src: &Path, dest: &Path);
     fn finish(self) -> Result<(), Box<dyn Error>>;
 
     fn write_archive(&mut self, filelist: &Vec<FileInfo>) {
         filelist.iter().for_each(|f| {
+            println!("{}, {}", f.path, f.content_path);
             match &f.symlink_path {
                 Some(points_to) => self.write_symlink(Path::new(&f.path), Path::new(&points_to)),
                 None => match f.file_type {
-                    FileType::DIRECTORY => self.write_dir(Path::new(&f.content_path)),
+                    FileType::DIRECTORY => {
+                        //FIXME: if dest dir follows src, src will be dangling.
+                        //
+                        if f.path != f.content_path {
+                            self.copy_dir(Path::new(&f.content_path), Path::new(&f.path));
+                        }
+                        self.write_dir(Path::new(&f.content_path));
+                    }
                     FileType::REGULAR => self.write_file(
                         Path::new(&f.path),
                         fs::read_to_string(&f.content_path)
@@ -85,6 +94,20 @@ impl Deflate for ZipDeflate {
             Err(_) => println!(
                 "{}",
                 format!("{} is illegal symlink", link.to_str().unwrap())
+            ),
+        }
+    }
+
+    fn copy_dir(&mut self, src: &Path, dest: &Path) {
+        match self.writer.deep_copy_file_from_path(src, dest) {
+            Ok(_) => {}
+            Err(_) => println!(
+                "{}",
+                format!(
+                    "cannot copy {} to {}",
+                    src.to_str().unwrap(),
+                    dest.to_str().unwrap()
+                )
             ),
         }
     }
