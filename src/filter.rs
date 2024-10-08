@@ -43,6 +43,9 @@ pub trait Filter: IntoIterator<Item = FileInfo> {
 
 /// The filter consider all of the files into regular files ignoring symlinks, and
 /// only check exisitence of the root path.
+///
+/// Symlink Behavior: transfer symlinks to regular file, does not follow symlinks.
+///
 /// ```
 /// # use clannad::filter::{Filter, BasicFilter};
 /// # use std::path::Path;
@@ -58,6 +61,8 @@ pub struct BasicFilter {
 
 /// The filter does not follow the symlink, even if the symlink
 /// is broken.
+///
+/// Symlink Behavior: retain symlinks, but not follow, symlinks pointing to symlinks treated as symlinks as well.
 ///
 /// ```
 /// # use clannad::filter::{Filter, SymlinkFilter};
@@ -86,28 +91,42 @@ pub struct SymlinkFilter {
 // FIXME: Inconsistenct with SymlinkFilter when it comes to symlink
 impl BasicFilter {
     fn list_files(&self) -> Option<Vec<FileInfo>> {
+        let root = self.root.clone();
+        if Path::new(&root).is_symlink() {
+            return Some(vec![FileInfo::new(
+                Path::new(&root),
+                Path::new(&root),
+                FileType::REGULAR,
+                None,
+            )]);
+        }
         if !Path::new(&self.root).try_exists().is_ok_and(|x| x) {
             return None;
         }
-        Some(self.list_files_recursive(Path::new(&self.root)))
-    }
-    //assume root exists
-    fn list_files_recursive(&self, root: &Path) -> Vec<FileInfo> {
-        if !root.is_dir() && !root.is_file() {
-            return Vec::new();
-        }
-        if root.is_file() {
-            return vec![FileInfo::new(root, root, FileType::REGULAR, None)];
-        }
         let mut results = Vec::new();
-        results.push(FileInfo::new(root, root, FileType::REGULAR, None));
-        for subfile in root.read_dir().expect("invalid directory") {
-            match subfile {
-                Ok(file) => results.append(&mut self.list_files_recursive(file.path().as_path())),
-                Err(_) => {}
-            };
+        let mut queue = VecDeque::new();
+        queue.push_back(root);
+        while !queue.is_empty() {
+            let root = queue.pop_front().unwrap();
+            let root_path = Path::new(&root);
+            results.push(FileInfo::new(
+                root_path,
+                root_path,
+                if root_path.is_dir() {
+                    FileType::DIRECTORY
+                } else {
+                    FileType::REGULAR
+                },
+                None,
+            ));
+            if root_path.is_file() {
+                continue;
+            }
+            for subfile in root_path.read_dir().unwrap() {
+                queue.push_back(subfile.unwrap().path().to_str().unwrap().to_owned());
+            }
         }
-        results
+        Some(results)
     }
 }
 
@@ -264,6 +283,13 @@ mod tests {
     }
 
     #[test]
+    fn basic_filter_symlink_root() {
+        let mut filter = BasicFilter::new(Path::new("resources/normalsymlink"));
+        filter.scan();
+        assert_eq!(filter.into_iter().len(), 1 as usize);
+    }
+
+    #[test]
     fn symlink_filter() {
         let mut filter = SymlinkFilter::new(Path::new("dst"));
         filter.scan();
@@ -281,5 +307,12 @@ mod tests {
             3
         );
         assert_eq!(filter.into_iter().len(), 8 as usize);
+    }
+
+    #[test]
+    fn symlink_filter_symlink_root() {
+        let mut filter = SymlinkFilter::new(Path::new("resources/normalsymlink"));
+        filter.scan();
+        assert_eq!(filter.into_iter().len(), 1 as usize);
     }
 }
