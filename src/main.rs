@@ -1,3 +1,8 @@
+use clannad::args;
+use clannad::args::Parser;
+use clannad::Args;
+
 fn main() {
-    println!("Hello, world!");
+    let args = Args::parse();
+    args::run(args);
 }
