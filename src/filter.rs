@@ -88,7 +88,6 @@ pub struct SymlinkFilter {
     files: Option<Vec<FileInfo>>,
 }
 
-// FIXME: Inconsistenct with SymlinkFilter when it comes to symlink
 impl BasicFilter {
     fn list_files(&self) -> Option<Vec<FileInfo>> {
         let root = self.root.clone();
