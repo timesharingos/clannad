@@ -82,7 +82,6 @@ pub struct BasicFilter {
 /// );
 /// assert_eq!(filter.into_iter().len(), 8 as usize);
 /// ```
-
 pub struct SymlinkFilter {
     root: String,
     files: Option<Vec<FileInfo>>,
