@@ -147,6 +147,9 @@ impl IntoIterator for BasicFilter {
 impl SymlinkFilter {
     fn list_files(&self) -> Option<Vec<FileInfo>> {
         let root = self.root.clone();
+        if Path::new(&self.root).is_symlink() {
+            return Some(vec![Self::query_fileinfo(&self.root)]);
+        }
         if !Path::new(&self.root).try_exists().is_ok_and(|x| x) {
             return None;
         }
