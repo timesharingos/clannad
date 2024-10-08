@@ -58,7 +58,7 @@ impl Deflate for ZipDeflate {
             .add_directory_from_path(dir, SimpleFileOptions::default())
         {
             Ok(_) => {}
-            Err(_) => println!("{}", format!("{} is illegal", dir.to_str().unwrap())),
+            Err(_) => println!("{}", format!("{} is illegal dir", dir.to_str().unwrap())),
         }
     }
 
@@ -68,11 +68,11 @@ impl Deflate for ZipDeflate {
             .start_file_from_path(file, SimpleFileOptions::default())
         {
             Ok(_) => {}
-            Err(_) => println!("{}", format!("{} is illegal", file.to_str().unwrap())),
+            Err(_) => println!("{}", format!("{} is illegal path", file.to_str().unwrap())),
         }
         match self.writer.write_all(content) {
             Ok(_) => {}
-            Err(_) => println!("{}", format!("{} is illegal", file.to_str().unwrap())),
+            Err(_) => println!("{}", format!("{} is illegal file", file.to_str().unwrap())),
         };
     }
 
@@ -82,7 +82,10 @@ impl Deflate for ZipDeflate {
             .add_symlink_from_path(link, target, SimpleFileOptions::default())
         {
             Ok(_) => {}
-            Err(_) => println!("{}", format!("{} is illegal", link.to_str().unwrap())),
+            Err(_) => println!(
+                "{}",
+                format!("{} is illegal symlink", link.to_str().unwrap())
+            ),
         }
     }
 }

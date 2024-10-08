@@ -1,6 +1,8 @@
+pub mod args;
 pub mod deflate;
 pub mod filter;
 
+pub use args::Args;
 pub use deflate::Deflate;
 pub use deflate::ZipDeflate;
 pub use filter::scan_symlink;
