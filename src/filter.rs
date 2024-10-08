@@ -402,6 +402,24 @@ impl IntoIterator for SymlinkFollowFilter {
     }
 }
 
+pub fn scan_symlink(root: &Path) -> Option<Vec<FileInfo>> {
+    let mut filter = SymlinkFilter::new(root);
+    filter.scan();
+    if let &None = filter.files() {
+        return None;
+    }
+    Some(filter.into_iter().collect())
+}
+
+pub fn scan_symlink_follow(root: &Path) -> Option<Vec<FileInfo>> {
+    let mut filter = SymlinkFollowFilter::new(root);
+    filter.scan();
+    if let &None = filter.files() {
+        return None;
+    }
+    Some(filter.into_iter().collect())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
